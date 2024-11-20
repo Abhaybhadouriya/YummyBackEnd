@@ -4,6 +4,8 @@ import com.abhay.assignment.dto.CustomerRequest;
 import com.abhay.assignment.dto.ProductDTO;
 import com.abhay.assignment.entity.Customer;
 import com.abhay.assignment.entity.Product;
+import com.abhay.assignment.helper.EncryptPassword;
+import com.abhay.assignment.helper.JWTHelper;
 import com.abhay.assignment.mapper.CustomerMapper;
 import com.abhay.assignment.mapper.ProductMapper;
 import com.abhay.assignment.repo.CustomerRepo;
@@ -23,11 +25,11 @@ public class CustomerService {
     private final CustomerRepo customerRepo;
     private final ProductRepo productRepo;
     private final ProductMapper productMapper;
-    private final PasswordEncoder passwordEncoder;
-
+    private final JWTHelper jwtHelper;
+    private final EncryptPassword encryptPassword;
     public String createCustomer(@Valid CustomerRequest request) {
         Customer customer = mapper.toEntity(request);
-        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        customer.setPassword(encryptPassword.encode(customer.getPassword()));
         customerRepo.save(customer);
         return "Created";
     }
@@ -44,7 +46,7 @@ public class CustomerService {
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
         customer.setEmail(request.email());
-        customer.setPassword(passwordEncoder.encode(request.password()));
+        customer.setPassword(encryptPassword.encode(request.password()));
         customerRepo.save(customer);
         return "User Updated Success Full \n "+ customer.toString();
     }
@@ -65,5 +67,14 @@ public class CustomerService {
     public String getProduct(ProductDTO request) {
         List<Product> product = productRepo.findTop2ByPriceRange(request.min(),request.max());
         return product == null ? "No Product Found" : product.toString();
+    }
+
+    public String login(@Valid CustomerRequest request) {
+        Customer customer = customerRepo.findByEmail(request.email()).orElse(null);
+        if(!encryptPassword.validates(request.password(), customer.getPassword())) {
+            return "Wrong Password or Email";
+        }
+
+        return jwtHelper.generateToken(request.email());
     }
 }

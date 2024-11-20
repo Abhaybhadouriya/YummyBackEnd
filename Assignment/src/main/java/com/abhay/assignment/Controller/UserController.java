@@ -49,4 +49,9 @@ public class UserController {
         return ResponseEntity.ok(services.getProduct(request));
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody @Valid CustomerRequest request) {
+        return ResponseEntity.ok(services.login(request));
+    }
+
 }
